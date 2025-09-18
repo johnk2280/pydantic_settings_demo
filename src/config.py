@@ -1,4 +1,7 @@
+import os
+
 from enum import Enum
+from functools import lru_cache
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -7,6 +10,7 @@ from pydantic_settings import SettingsConfigDict
 
 
 class Environment(Enum):
+    TEST = 'test'
     DEV = 'dev'
     PROD = 'prod'
 
@@ -47,6 +51,49 @@ class Settings(BaseSettings):
     DB: DatabeseSettings
 
 
+class TestSettings(Settings):
+    ENVIRONMENT: Environment = Environment.TEST
+    LOG_LEVEL: LogLevel = LogLevel.DEBUG
+
+    APP_TITLE: str = 'MY_APP_TEST'
+
+    KEYCLOAK_SERVER_URL: str = 'https://isso-dev.mts.ru/auth'
+    KEYCLOAK_CLIENT_ID: str = 'dev_client_id'
+
+
+class DevSettings(Settings):
+    ENVIRONMENT: Environment = Environment.DEV
+    LOG_LEVEL: LogLevel = LogLevel.DEBUG
+
+    APP_TITLE: str = 'MY_APP_DEV'
+
+    KEYCLOAK_SERVER_URL: str = 'https://isso-dev.mts.ru/auth'
+    KEYCLOAK_CLIENT_ID: str = 'dev_client_id'
+
+
+class ProdSettings(Settings):
+    ENVIRONMENT: Environment = Environment.PROD
+    LOG_LEVEL: LogLevel = LogLevel.INFO
+
+    APP_TITLE: str = 'MY_APP'
+
+    KEYCLOAK_SERVER_URL: str = 'https://iss.mts.ru/auth'
+    KEYCLOAK_CLIENT_ID: str = 'prod_client_id'
+
+
+ENVIRONMENTS: dict[str | None, type[Settings]] = {
+    Environment.TEST.value: TestSettings,
+    Environment.DEV.value: DevSettings,
+    Environment.PROD.value: ProdSettings,
+}
+
+
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    env = os.environ.get('ENVIRONMENT')
+    return ENVIRONMENTS[env]()  # type: ignore[reportCallIssue]
+
+
 if __name__ == '__main__':
-    settings = Settings()  # type: ignore[reportCallIssue]
+    settings = get_settings()
     print(settings.model_dump_json(indent=4))
