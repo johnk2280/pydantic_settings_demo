@@ -128,6 +128,11 @@ skip-magic-trailing-comma = false
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
 
+[dependency-groups]
+dev = [
+    "ruff>=0.13.0",
+]
+
 [tool.ruff.lint.flake8-bandit]
 hardcoded-tmp-directory = ["/tmp", "/temp", "../temp", "../tmp"]
 
